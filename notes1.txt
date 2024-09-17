@@ -1,0 +1,411 @@
+1. created 2 folder
+
+    client 
+    server
+
+2. opened server folder
+
+    cd server
+
+3. created package.json
+
+    npm init -y
+
+4. npm install express mongodb dotenv nodemon
+
+5. in package.json scripts,
+
+     "start": "node index.js",
+    "dev":"nodemon index.js"
+
+6. created index.js
+
+    created server 
+***********************************************
+        const express = require('express');
+        const app = express();
+
+        const PORT = process.env.PORT || 5000;
+
+        app.listen(PORT, () =>{
+
+                console.log(`Server is running on port:  ${PORT} ` );
+            });
+**************************************************
+7. added one more terminal 
+
+    renamed it to : client, and created : react app 
+    renamed other terminal: server
+
+8. cleared react app
+
+9. created routes.js in server folder
+
+**************************************************
+    const express = require('express');
+    const router = express.Router();
+
+    const express = require('express');
+
+    const router = express.Router();
+
+    router.get('/todos', async (req,res) => {
+
+        res.status(200).json({msg: "Get Request"});
+
+    });
+
+    router.post('/todos',async (req,res) => {
+
+        res.status(201).json({msg: "Post Request"});
+
+    });
+
+    router.put('/todos/:id',async (req,res) => {
+
+        res.status(200).json({msg: "Put Request"});
+
+    });
+
+    router.delete('/todos/:id',async (req,res) => {
+
+        res.status(200).json({msg: "Delete Request"});
+
+    });
+
+    module.exports = router;
+**************************************************
+
+10. imported routes to index.js
+
+    **************************************************
+
+    const router = require('./routes');
+
+    app.use("/api",router);
+
+    **************************************************
+
+11. installed post man extension : new collection - request
+
+
+12. in client app.js, inside useeffect added fetch fn
+
+    got cors error - so added in client packange.json : "proxy": "http://localhost:5000",
+
+    and deleted "http://localhost:5000" from fetch url
+
+
+    **************************************************
+
+        const [msg,setMsg] = useState("");
+
+        useEffect(() => {
+
+            const getTodoList = async () => {
+
+            const res = await fetch('/api/todos');
+
+            const todoList = await res.json();
+
+            console.log(todoList);
+
+                setMsg(todoList.msg);
+            }
+
+            getTodoList();
+
+
+        }, [])
+
+
+
+    <main className="container">  
+
+      <h1>TO-DO APP</h1>
+
+      <p>{msg}</p>
+
+    </main>
+
+
+
+    **************************************************
+
+13. created database.js
+
+*****************************************************
+
+const {MongoClient, ServerApiVersion} = require("mongodb");
+
+const uri = process.env.MONGODB_URI || "mongodb://localhost:27017/";
+
+const options = {
+
+    serverApi: {
+        version: ServerApiVersion.v1,
+        strict: true,
+        deprecationErrors: true,
+    }
+}
+
+let client;
+
+const connectToMongoDB = async () => {
+
+    if(!client){
+
+        try{
+
+            client = await MongoClient.connect(uri,options);
+            console.log("Connected to MongoDb")
+
+
+        } catch(err) {
+
+            console.log(err);
+
+
+        }
+    }
+    return client;
+}
+
+const getConnectedClient = () => client;
+
+module.exports = {connectToMongoDB, getConnectedClient}
+
+***************************************************************
+
+14. created .env
+
+***************************************************************
+
+MONGODB_URI = mongodb+srv://remyaraju2205:vY1dq7oHcDxuSfMS@cluster0.37zdw.mongodb.net/tododb
+PORT = 5000
+
+***************************************************************
+
+15. added dotenv to index.js and database.js
+
+***************************************************************
+
+require("dotenv").config();
+
+***************************************************************
+
+16. imported connecttoclient fn from databse.js to index.js
+
+*******************************************
+
+const {connectToMongoDB} = require('./database');
+
+*********************************************
+
+17. created startserver fn in index.js
+
+    moved app.listen inside it
+
+    *************************************************************
+
+    const startServer = async () => {
+
+    await connectToMongoDB();
+
+    app.listen(PORT, () =>{
+
+        console.log(`Server is running on port:  ${PORT} ` );
+    });
+    }
+
+    startServer();
+
+********************************************************
+
+18. imported getConnectedClient from ./database in routes.js
+
+*************************************************
+
+const {getConnectedClient} = require('./database');
+
+*******************************************
+
+19. created getCollections fn in routes.js
+
+*******************************************
+
+const getCollections = () => {
+
+    const client = getConnectedClient();
+
+    const collections = client.db("tododb").collection("todos");
+
+    return collections;
+}
+
+********************************************
+
+20. changed get fn
+
+*************************************************
+
+router.get('/todos', async (req,res) => {
+
+    const collection = getCollections();
+
+    const todos = await collection.find({}).toArray();
+
+    res.status(200).json(todos);
+
+    // res.status(200).json({msg: "Get Request"});
+});
+
+*******************************************
+
+19. added in index.js : 
+
+**************************************
+
+app.use(express.json()); 
+
+****************************************
+
+20. changed post fn in routes.js
+
+************************************************
+
+router.post('/todos',async (req,res) => {
+
+    const collecton = getCollections();
+
+    let {todo} = req.body;
+
+    if(!todo){
+
+        return res.status(400).json({msg: "No todo found"});
+    }
+
+    todo = (typeof todo === "string") ? todo : JSON.stringify(todo);
+
+    const newTodo = await collecton.insertOne({todo,status:false})
+
+    res.status(201).json({todo, status: false, _id: newTodo.insertedId});
+
+    // res.status(201).json({msg: "Post Request"});
+});
+
+*************************************************
+
+21.  edded  in routes.js
+
+************************************
+
+const {ObjectId} = require('mongodb')
+
+*************************************
+
+22. changed all put,post ,del method
+
+*************************************************
+
+router.put('/todos/:id',async (req,res) => {
+
+    const collecton = getCollections();
+
+    const _id = new ObjectId(req.params.id);
+
+    const {status} = req.body;
+
+    if(typeof status !== "boolean"){
+
+        return res.status(400).json({msg: "Invalid status"});
+    }
+
+    const updatedTodo = await collecton.updateOne({_id},{$set: {status: !status}})
+
+    res.status(200).json(updatedTodo);
+
+    // res.status(200).json({msg: "Put Request"});
+});
+
+router.delete('/todos/:id',async (req,res) => {
+
+    const collecton = getCollections();
+
+    const _id = new ObjectId(req.params.id);
+
+    const deletedTodo = await collecton.deleteOne({_id});
+
+    res.status(200).json(deletedTodo);
+
+    // res.status(200).json({msg: "Delete Request"});
+});
+
+******************************************************
+
+23. client app.js
+
+    usestate
+    pretag
+
+    **********************************************************************
+      const [todos,setTodos] = useState([]);
+
+      useEffect(() => {
+
+    const getTodoList = async () => {
+
+      const res = await fetch('/api/todos');
+
+      const todoList = await res.json();
+
+      console.log(todoList);
+
+      setTodos(todoList);
+
+    }
+
+    getTodoList();
+
+
+  }, [])
+
+
+  <main className="container">  
+
+      <h1>TO-DO APP</h1>
+
+      <form action="" className='form' onSubmit={(e) => createTodo(e)}>
+
+        <input 
+            type="text"
+            placeholder='Enter Task'
+            value={input}
+            onChange={(e) => setInput(e.target.value)}
+            required
+
+        />
+
+        <button type='submit'>Add</button>
+
+      </form>
+
+      {/* <p>{msg}</p> */}
+
+      {(todos.length > 0) && 
+      
+      todos.map((item,idx) => {
+
+        return <div className="todo-items" key={idx}>
+
+                <p>{item.todo}</p>
+
+                <button className='todo-button' onClick={() => updateStatus(item._id,item.status)}> {item.status ? "Done" : "To-Do"} </button>
+
+                <button className='todo-button' onClick={() => deleteTodo(item._id)}> Delete </button>
+
+
+                </div>
+      })}
+      
+    </main>
