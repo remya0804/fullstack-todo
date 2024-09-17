@@ -1,0 +1,72 @@
+1. created 2 folder
+
+    client 
+    server
+
+2. opened server folder
+
+    cd server
+
+3. created package.json
+
+    npm init -y
+
+4. npm install express mongodb dotenv nodemon
+
+5. in package.json scripts,
+
+     "start": "node index.js",
+    "dev":"nodemon index.js"
+
+6. created index.js
+
+    created server 
+
+7. added one more terminal 
+
+    renamed it to : client, and created : react app 
+    renamed other terminal: server
+
+8. cleared react app
+
+9. created routes.js in server folder
+
+10. imported routes to index.js
+
+11. installed post man extension : new collection - request
+
+12. in client app.js, inside useeffect added fetch fn
+
+    got cors error - so added in client packange.json : "proxy": "http://localhost:5000",
+
+    and deleted "http://localhost:5000" from fetch url
+
+13. created database.js
+
+14. created .env
+
+14. imported connecttoclient fn from databse.js to index.js
+
+15. created startserver fn in index.js
+
+    moved app.listen inside it
+
+16. imported getConnectedClient from ./database in routes.js
+
+17. created getCollections fn in routes.js
+
+18. changed get fn
+
+19. added in index.js :   app.use(express.json()); 
+
+20. changed post fn in routes.js
+
+21.  edded const {ObjectId} = require('mongodb') in routes.js
+
+22. changed all put,post ,del method
+
+23. client app.js
+
+    usestate
+    pretag
+ 
